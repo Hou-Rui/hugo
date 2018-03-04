@@ -1,0 +1,8 @@
+set a = 5
+if 1 < $a$ < 3
+    echo STAGE1
+else if 3 < $a$ < 7
+    echo STAGE2
+else
+    echo STAGE3
+end
