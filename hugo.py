@@ -92,6 +92,13 @@ class Interpreter:
         self.while_stack = Stack()
         self.while_lines = set()
 
+    def evaluate(self, expr: str) -> object:
+        expr = expr.replace(' mod ', ' % ')
+        allowed_objects = {
+            'abs': abs, 'min': min, 'max': max
+        }
+        return eval(expr, allowed_objects)
+
     def load(self, filename: str):
         """
         加载文件，并预处理标签表。
@@ -119,7 +126,7 @@ class Interpreter:
         macro_name = ''
         result = ''
         for c in line:
-            if c == '$':
+            if c == '%':
                 in_macro = not in_macro
                 if not in_macro:
                     try:
@@ -176,7 +183,7 @@ class Interpreter:
         elif cmd == 'LET':
             for arg in args:
                 key, expr = (x.strip() for x in arg.split('='))
-                self.var_table[key] = str(eval(expr)).strip()
+                self.var_table[key] = str(self.evaluate(expr)).strip()
         # 处理 INPUT 语句
         elif cmd == 'INPUT':
             for key in args:
@@ -249,7 +256,7 @@ class Interpreter:
                     self.while_lines.add(i)
                 result = False
                 if (not self.while_stack) or self.while_stack.top()[0]:
-                    result = eval(args[0])
+                    result = self.evaluate(args[0])
                 self.while_stack.push((bool(result), i))
                 i += 1
                 continue
@@ -257,7 +264,7 @@ class Interpreter:
             if cmd == 'IF':
                 result = False
                 if (not self.if_stack) or self.if_stack.top():
-                    result = eval(args[0])
+                    result = self.evaluate(args[0])
                 self.if_stack.push(bool(result))
                 i += 1
                 continue
@@ -267,7 +274,7 @@ class Interpreter:
                     raise Error(i, 'ELSE without IF')
                 if len(args) > 0 and args[0].upper() == 'IF':
                     if not self.if_stack.pop():
-                        result = eval(args[1])
+                        result = self.evaluate(args[1])
                     self.if_stack.push(bool(result))
                     i += 1
                     continue

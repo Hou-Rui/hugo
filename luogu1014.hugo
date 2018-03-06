@@ -1,12 +1,12 @@
 set i = 0, j = 0
 input n
-while $n$ > $j$
-    let i = $i$ + 1
-    let j = $j$ + $i$
+while %n% > %j%
+    let i = %i% + 1
+    let j = %j% + %i%
 wend
-if $i$ % 2 == 1
-    let up = $j$ - $n$ + 1, down = $i$ + $n$ - $j$
+if %i% mod 2 == 1
+    let up = %j% - %n% + 1, down = %i% + %n% - %j%
 else
-    let up = $i$ + $n$ - $j$, down = $j$ - $n$ + 1
+    let up = %i% + %n% - %j%, down = %j% - %n% + 1
 end
-echo $up$/$down$
+echo %up%/%down%

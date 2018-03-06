@@ -3,9 +3,9 @@ let i = 0, a = 0, b = 1
 print 输入数字个数：
 input n
 
-while $i$ < $n$
-    print $b$
+while %i% < %n%
+    print %b%
     swap a, b
-    let b = $a$ + $b$
-    let i = $i$ + 1
+    let b = %a% + %b%
+    let i = %i% + 1
 wend
