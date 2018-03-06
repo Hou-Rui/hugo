@@ -130,7 +130,15 @@ class Interpreter:
                 in_macro = not in_macro
                 if not in_macro:
                     try:
-                        result += self.var_table[macro_name]
+                        data = macro_name.split(':')
+                        if len(data) == 1:
+                            result += self.var_table[macro_name]
+                        else:
+                            head, cnt = data[0], int(data[1])
+                            array = self.var_table[head].split(' ')
+                            if cnt >= len(array):
+                                raise Error(line_cnt, 'array subscript over-bounded')
+                            result += array[cnt]
                     except KeyError:
                         pass  # 未定义的变量视为空
                     macro_name = ''
@@ -303,7 +311,7 @@ class Interpreter:
 
 def main():
     my = Interpreter()
-    my.load("luogu1014.hugo")
+    my.load("test.hugo")
     try:
         my.run()
     except Error as error:
