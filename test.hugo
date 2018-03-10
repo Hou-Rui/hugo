@@ -1,2 +1,3 @@
-set a = 123 234 345
-echo %a:1%
+let a = 34
+let b = $a + 37
+echo $b

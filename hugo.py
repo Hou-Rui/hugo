@@ -81,6 +81,12 @@ class Lexer:
 class Interpreter:
     """ 解释器类。 """
 
+    var_end_table = [
+        ' ', '\n', '\t', '\r',
+        ',', '+', '-', '*', '/', '%',
+        '$'
+    ]
+
     def __init__(self):
         """ 初始化。 """
         self.lexer = Lexer()
@@ -125,30 +131,34 @@ class Interpreter:
         in_macro = False
         macro_name = ''
         result = ''
+        if not line.endswith('\n'):
+            line += '\n'
         for c in line:
-            if c == '%':
-                in_macro = not in_macro
-                if not in_macro:
-                    try:
-                        data = macro_name.split(':')
-                        if len(data) == 1:
-                            result += self.var_table[macro_name]
-                        else:
-                            head, cnt = data[0], int(data[1])
-                            array = self.var_table[head].split(' ')
-                            if cnt >= len(array):
-                                raise Error(line_cnt, 'array subscript over-bounded')
-                            result += array[cnt]
-                    except KeyError:
-                        pass  # 未定义的变量视为空
+            if not in_macro and c == '$':
+                in_macro = True
+            elif in_macro and c in self.var_end_table:
+                try:
+                    data = macro_name.split(':')
+                    if len(data) == 1:
+                        result += self.var_table[macro_name]
+                    else:
+                        head, cnt = data[0], int(data[1])
+                        array = self.var_table[head].split(' ')
+                        if cnt >= len(array):
+                            raise Error(line_cnt, 'array subscript over-bounded')
+                        result += array[cnt]
+                except KeyError:
+                    pass  # 未定义的变量视为空
+                finally:
+                    in_macro = False
+                    result += c
                     macro_name = ''
             elif in_macro:
                 macro_name += c
             else:
                 result += c
-        if macro_name:
-            result += '%' + macro_name
-        return result
+        # 去掉额外添加的'\n'
+        return result.strip()
 
     def parse_command(self, line_cnt: int, line: str) -> (str, list):
         """
@@ -159,7 +169,7 @@ class Interpreter:
         """
         line = self.replace_marco(line_cnt, line)
         cmd, *args = line.split(' ')
-        cmd = cmd.upper()
+        cmd = cmd.upper().strip()
         args = [x.strip() for x in self.lexer.tokenize(' '.join(args))]
         return cmd, args
 
@@ -197,6 +207,18 @@ class Interpreter:
             for key in args:
                 value = input().strip()
                 self.var_table[key] = value
+        elif cmd == 'INC':
+            try:
+                key = args[0]
+                self.var_table[key] = str(int(self.var_table[key]) + 1)
+            except KeyError:
+                self.var_table[key] = '1'
+        elif cmd == 'DEC':
+            try:
+                key = args[0]
+                self.var_table[key] = str(int(self.var_table[key]) - 1)
+            except KeyError:
+                self.var_table[key] = '-1'
         # 处理 SWAP 语句
         elif cmd == 'SWAP':
             key1, key2 = args[0], args[1]
@@ -311,7 +333,9 @@ class Interpreter:
 
 def main():
     my = Interpreter()
-    my.load("test.hugo")
+    #prog_name = sys.argv[1]
+    #my.load(prog_name)
+    my.load('luogu1014.hugo')
     try:
         my.run()
     except Error as error:

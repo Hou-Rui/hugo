@@ -1,10 +1,10 @@
-echo "输入n，m："
+echo "输入n，m: "
 input n, m
 
-while %m% > 0
-    let c = %n% mod %m%
-    let n = %m%
-    let m = %c%
+while $m > 0
+    let c = $n mod $m
+    let n = $m
+    let m = $c
 wend
 
-echo gcd(n, m) = %n%
+echo gcd(n, m) = $n
