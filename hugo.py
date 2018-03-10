@@ -34,13 +34,14 @@ class Error(Exception):
 class Lexer:
     """ 简易词法解析器，产生记号。 """
 
+    pairs = ('(', ')'), ('[', ']'), ('{', '}')
+
     def is_closed(self, string: str) -> bool:
         """
         判断字符串中括号是否闭合。
         :param str: 待判断字符串。
         """
-        pairs = ('(', ')'), ('[', ']'), ('{', '}')
-        for begin, end in pairs:
+        for begin, end in self.pairs:
             if string.count(begin) != string.count(end):
                 return False
         return True
@@ -180,74 +181,101 @@ class Interpreter:
         :param cmd: 命令名。
         :param args: 参数列表。
         """
-        # 处理 PAUSE 语句
         if cmd == 'PAUSE':
-            input('...')
-        # 处理 ECHO 语句
+            self.exec_pause(args)
         elif cmd == 'ECHO':
-            for item in args:
-                print(item, end=' ')
-            print()
-        # 处理 PRINT 语句
+            self.exec_echo(args)
         elif cmd == 'PRINT':
-            for item in args:
-                print(item, end=' ')
-        # 处理 SET 语句
+            self.exec_print(args)
         elif cmd == 'SET':
-            for arg in args:
-                key, value = (x.strip() for x in arg.split('='))
-                self.var_table[key] = value
-        # 处理 LET 语句
+            self.exec_set(args)
         elif cmd == 'LET':
-            for arg in args:
-                key, expr = (x.strip() for x in arg.split('='))
-                self.var_table[key] = str(self.evaluate(expr)).strip()
-        # 处理 INPUT 语句
+            self.exec_let(args)
         elif cmd == 'INPUT':
-            for key in args:
-                value = input().strip()
-                self.var_table[key] = value
+            self.exec_input(args)
         elif cmd == 'INC':
-            try:
-                key = args[0]
-                self.var_table[key] = str(int(self.var_table[key]) + 1)
-            except KeyError:
-                self.var_table[key] = '1'
+            self.exec_inc(args)
         elif cmd == 'DEC':
-            try:
-                key = args[0]
-                self.var_table[key] = str(int(self.var_table[key]) - 1)
-            except KeyError:
-                self.var_table[key] = '-1'
-        # 处理 SWAP 语句
+            self.exec_dec(args)
         elif cmd == 'SWAP':
-            key1, key2 = args[0], args[1]
-            self.var_table[key1], self.var_table[key2] \
-            = self.var_table[key2], self.var_table[key1]
-        # 处理 GOTO 语句
+            self.exec_swap(args)
         elif cmd == 'GOTO':
-            try:
-                label_name = args[0]
-                label = self.label_table[label_name]
-            except KeyError:
-                raise Error(line_cnt, 'unknown label %s' % label_name)
-            self.goto_stack.push(label)
-        # 处理 CALL 语句
+            self.exec_goto(args, line_cnt)
         elif cmd == 'CALL':
-            try:
-                label_name = args[0]
-                label = self.label_table[label_name]
-            except KeyError:
-                raise Error(line_cnt, 'unknown label %s' % label_name)
-            self.goto_stack.push(self.label_table[label_name])
-            self.call_stack.push(line_cnt + 1)
-        # 处理 RETURN 语句
+            self.exec_call(args, line_cnt)
         elif cmd == 'RETURN':
-            self.goto_stack.push(self.label_table['EOF'])
-        # 处理 EXIT 语句
+            self.exec_return()
         elif cmd == 'EXIT':
-            sys.exit(0)
+            self.exec_exit()
         return 0
+
+    def exec_exit(self):
+        sys.exit(0)
+
+    def exec_return(self):
+        self.goto_stack.push(self.label_table['EOF'])
+
+    def exec_call(self, args, line_cnt):
+        try:
+            label_name = args[0]
+            label = self.label_table[label_name]
+        except KeyError:
+            raise Error(line_cnt, 'unknown label %s' % label_name)
+        self.goto_stack.push(label)
+        self.call_stack.push(line_cnt + 1)
+
+    def exec_goto(self, args, line_cnt):
+        try:
+            label_name = args[0]
+            label = self.label_table[label_name]
+        except KeyError:
+            raise Error(line_cnt, 'unknown label %s' % label_name)
+        self.goto_stack.push(label)
+
+    def exec_swap(self, args):
+        key1, key2 = args[0], args[1]
+        self.var_table[key1], self.var_table[key2] \
+        = self.var_table[key2], self.var_table[key1]
+
+    def exec_dec(self, args):
+        try:
+            key = args[0]
+            self.var_table[key] = str(int(self.var_table[key]) - 1)
+        except KeyError:
+            self.var_table[key] = '-1'
+
+    def exec_inc(self, args):
+        try:
+            key = args[0]
+            self.var_table[key] = str(int(self.var_table[key]) + 1)
+        except KeyError:
+            self.var_table[key] = '1'
+
+    def exec_input(self, args):
+        for key in args:
+            value = input().strip()
+            self.var_table[key] = value
+
+    def exec_let(self, args):
+        for arg in args:
+            key, expr = (x.strip() for x in arg.split('='))
+            self.var_table[key] = str(self.evaluate(expr)).strip()
+
+    def exec_set(self, args):
+        for arg in args:
+            key, value = (x.strip() for x in arg.split('='))
+            self.var_table[key] = value
+
+    def exec_print(self, args):
+        for item in args:
+            print(item, end=' ')
+
+    def exec_echo(self, args):
+        self.exec_print(args)
+        print()
+
+    def exec_pause(self, args):
+        input('...')
 
     def run(self):
         """ 执行程序。 """
